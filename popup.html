@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Speech to Text Extension</title>
+    <link rel="stylesheet" type="text/css" href="popup.css" />
+  </head>
+  <body>
+    <div id="switch-container">
+      <label class="switch">
+        <input type="checkbox" id="speech-switch" />
+        <span class="slider round"></span>
+      </label>
+    </div>
+    <div id="dartsApp">
+      <select
+        id="select_darts_application"
+        name="selectDartsApp"
+      >
+        <option selected >Nakka</option>
+        <option >DartConnect</option>
+        <option >Lidarts</option>
+        <option >Darts-Scoring</option>
+        <option >King of Darts</option>
+      </select>
+    </div>
+
+    <div id="language">
+      <select id="select_language" name="selectLanguage"></select>
+      <select
+        id="select_dialect"
+        name="selectDialect"
+      >
+      </select>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
+<!--New Code!-->
