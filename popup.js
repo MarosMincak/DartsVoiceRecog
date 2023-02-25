@@ -62,18 +62,88 @@ var langs =
  ['日本語',           ['ja-JP']],
  ['Lingua latīna',   ['la']]];
 
-document.addEventListener('DOMContentLoaded', function() {
+// pass message to content.js
+function passMessageToDialect(data){    
+  chrome.storage.local.set(data, function () {
+      chrome.tabs.executeScript({
+          file: "content.js"
+      });
+  });
+}
+
+function appendOptions(select, text, value){
+  var el = document.createElement("option");
+  el.textContent = text;
+  el.value = value;
+  // no other dialects
+  if(text === "Default") {
+    el.readonly = true;
+  }
+  
+  select.appendChild(el);
+}
+
+function removeOptions(selectElement) {
+  var i, L = selectElement.options.length - 1;
+  for(i = L; i >= 0; i--) {
+     selectElement.remove(i);
+  }
+}
+
+function getRecogState(windowid) {
+  return new Promise(resolve => {
+    chrome.storage.local.get(["recog."+windowid], function(result) {
+      if(result.key == undefined) {
+        resolve(false)
+      }else {
+        resolve(result.key)
+      }
+    })
+  })
+}
+
+function getActiveTabID() {
+  return new Promise(resolve => {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      var currTab = tabs[0];
+      if (currTab != undefined) { 
+        resolve(currTab.id);
+      }else {
+        resolve(0);
+      }
+    });
+  })
+}
+
+function setSessionRecogState(windowid, state) { // In Dev not working
+  return new Promise(resolve => {
+    chrome.storage.local.set(JSON.parse('{"recog":{"'+windowid+'":'+state+'}}'), function() {
+      resolve(true)
+    })
+  })
+}
+
+async function Load() {
   var speechSwitch = document.getElementById('speech-switch');
+  var activetab = await getActiveTabID();
+  /*if(await getRecogState(activetab)) { Disabled
+    speechSwitch.checked = true;
+  }*/
   speechSwitch.addEventListener('change', function() {
     if (speechSwitch.checked) {
-      // Start speech recognition
+      //setSessionRecogState(activetab, true); Disabled
       chrome.tabs.executeScript({
-        code: 'window.speechToText()'
+        code: 'window.dartsvoice.load('+activetab+', false)'
       });
+      // Start speech recognition
+      //chrome.tabs.executeScript({
+      //  //code: 'window.speechToText()'
+      //});
     } else {
       // Stop speech recognition
+      //setSessionRecogState(activetab, false); Disabled
       chrome.tabs.executeScript({
-        code: "recognition.stop()",
+        code: "window.dartsvoice.stop()",
       });
     }
   });
@@ -114,32 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
       })
     }
   })
+} 
 
-  // pass message to content.js
-  function passMessageToDialect(data){    
-    chrome.storage.local.set(data, function () {
-        chrome.tabs.executeScript({
-            file: "content.js"
-        });
-    });
-  }
-
-  function appendOptions(select, text, value){
-    var el = document.createElement("option");
-    el.textContent = text;
-    el.value = value;
-    // no other dialects
-    if(text === "Default") {
-      el.readonly = true;
-    }
-    
-    select.appendChild(el);
-  }
-
-  function removeOptions(selectElement) {
-    var i, L = selectElement.options.length - 1;
-    for(i = L; i >= 0; i--) {
-       selectElement.remove(i);
-    }
- }
-});
+document.addEventListener("DOMContentLoaded", Load);

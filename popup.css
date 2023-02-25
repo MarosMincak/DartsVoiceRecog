@@ -1,15 +1,15 @@
 #dartsApp {
   width: 100%;
-  }
+}
   
-  #language {
+#language {
   display: flex;
   width: 100%;
-  }
+}
   
-  #language select {
+#language select {
   width: 50%;
-  }
+}
 
 .slider {
   position: absolute;
