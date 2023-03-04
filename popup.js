@@ -90,18 +90,6 @@ function removeOptions(selectElement) {
   }
 }
 
-function getRecogState(windowid) {
-  return new Promise(resolve => {
-    chrome.storage.local.get(["recog."+windowid], function(result) {
-      if(result.key == undefined) {
-        resolve(false)
-      }else {
-        resolve(result.key)
-      }
-    })
-  })
-}
-
 function getActiveTabID() {
   return new Promise(resolve => {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -115,33 +103,21 @@ function getActiveTabID() {
   })
 }
 
-function setSessionRecogState(windowid, state) { // In Dev not working
-  return new Promise(resolve => {
-    chrome.storage.local.set(JSON.parse('{"recog":{"'+windowid+'":'+state+'}}'), function() {
-      resolve(true)
-    })
-  })
-}
-
 async function Load() {
   var speechSwitch = document.getElementById('speech-switch');
   var activetab = await getActiveTabID();
-  /*if(await getRecogState(activetab)) { Disabled
-    speechSwitch.checked = true;
-  }*/
+  chrome.runtime.sendMessage("get-web-winodow-update-"+activetab, (res) => {
+    if(res == true) {
+      speechSwitch.checked = true;
+    }
+  });
   speechSwitch.addEventListener('change', function() {
     if (speechSwitch.checked) {
-      //setSessionRecogState(activetab, true); Disabled
       chrome.tabs.executeScript({
         code: 'window.dartsvoice.load('+activetab+', false)'
       });
-      // Start speech recognition
-      //chrome.tabs.executeScript({
-      //  //code: 'window.speechToText()'
-      //});
     } else {
       // Stop speech recognition
-      //setSessionRecogState(activetab, false); Disabled
       chrome.tabs.executeScript({
         code: "window.dartsvoice.stop()",
       });
