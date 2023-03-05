@@ -1,68 +1,97 @@
 var selectedDialect = "sk-SK",
     recognition;
 
-window.speechToText = function () {
-  // Check if the browser supports the SpeechRecognition API
-  if ("webkitSpeechRecognition" in window) {
-    recognition = new webkitSpeechRecognition();
-    // Set interimResults to true to receive results as they are recognized
-    recognition.interimResults = true;
+let default_language = "sk-SK";
 
-    // Set the language for the recognition
-    //recognition.lang = select_dialect.value;
-    recognition.lang = selectedDialect;
+window.dartsvoice = {}
+window.dartsvoice.recognition = 0;
+window.dartsvoice.status = "unloaded";
 
-    var interim_transcript = "";
-    var transcript = "";
-
-    // // Create a function to handle the result event
-    recognition.onresult = function (event) {
-      var interim_transcript = "";
-      var transcript = "";
-      // Get the transcription of the speech
-      for (var i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          transcript += event.results[i][0].transcript;
-        } else {
-          interim_transcript += event.results[i][0].transcript;
-        }
-      }
-      console.log(event.results);
-
-      // Filter the transcription to keep only the digits
-      transcript = transcript.replace(/[^0-9]/g, "");
-      interim_transcript = transcript.replace(/[^0-9]/g, "");
-
-      // Log the filtered transcription to the console
-      console.log(transcript);
-
-      console.log("\n");
-      document.querySelector(".input_area").innerHTML = interim_transcript;
-      document.querySelector(".input_area").innerHTML = transcript;
-
-      // Press enter
-      enterResult(transcript);
-    };
-
-    recognition.onerror = function (event) {
-      errorHandle(event);
-    }
-
-    // Define the stop function as a method of the recognition object
-    recognition.stop = function () {
-      recognition.abort();
-    };
-  } else {
-    alert("Hello! I am an alert box!!");
+window.dartsvoice.load = function(windowid, force) {
+  window.dartsvoice.windowid = windowid
+  if(window.dartsvoice.status == "success_loaded" && !force) {
+    alert("Already loaded")
+    return
   }
-  // We should start recognition after each pause
-// Other way it will just stop recognizing forever (till the next page load)
-recognition.addEventListener('end', recognition.start);
+  // Check if the browser supports the SpeechRecognition API
+  if("webkitSpeechRecognition" in window) {
+    window.dartsvoice.recognition = new webkitSpeechRecognition();
+    // Set interimResults to true to receive results as they are recognized
+    window.dartsvoice.recognition.interimResults = true;
+    //Set the language for recognition
+    window.dartsvoice.reloadLang(default_language)
 
-// Starting recognition first time
-recognition.start();
-};
-//new code!
+    window.dartsvoice.recognition.onresult = window.dartsvoice.onvoicedetect;
+    window.dartsvoice.recognition.onerror = window.dartsvoice.onvoiceerror;
+    window.dartsvoice.recognition.stop = window.dartsvoice.onvoicestop;
+    window.dartsvoice.recognition.addEventListener('end', () => {
+      window.dartsvoice.start(false);
+    });
+    window.dartsvoice.status = "success_loaded"
+    window.dartsvoice.start(true)
+    chrome.runtime.sendMessage("setdata window status "+windowid + " true", (res) => {});
+  }else {
+    window.dartsvoice.status = "failed_unsupported"
+  }
+}
+
+window.dartsvoice.onvoicedetect = function(event) {
+  var interim_transcript = "";
+  var transcript = "";
+
+  // Get the transcription of the speech
+  for (var i = event.resultIndex; i < event.results.length; i++) {
+    if (event.results[i].isFinal) {
+      transcript += event.results[i][0].transcript;
+    } else {
+      interim_transcript += event.results[i][0].transcript;
+    }
+  }
+  console.log(event.results[0][0]);
+
+  // Filter the transcription to keep only the digits
+  transcript = transcript.replace(/[^0-9]/g, "");
+  interim_transcript = transcript.replace(/[^0-9]/g, "");
+
+  // Log the filtered transcription to the console
+  console.log(transcript);
+
+  console.log("\n");
+  document.querySelector(".input_area").innerHTML = interim_transcript;
+  document.querySelector(".input_area").innerHTML = transcript;
+
+  // Press enter
+  enterResult(transcript);
+}
+
+window.dartsvoice.onvoiceerror = function(event) {
+  errorHandle(event);
+}
+
+window.dartsvoice.onvoicestop = function(event) {
+  //window.dartsvoice.recognition.abort();
+}
+
+window.dartsvoice.reloadLang = function(lang) {
+  window.dartsvoice.recognition.lang = lang
+}
+
+window.dartsvoice.start = function(force) {
+  if(force) {
+    window.dartsvoice.recognition.start();
+  }else {
+    if(window.dartsvoice.status == "success_loaded") {
+      window.dartsvoice.recognition.start();
+    }
+  }
+}
+
+window.dartsvoice.stop = function() {
+  window.dartsvoice.recognition.abort();
+  window.dartsvoice.recognition = undefined;
+  window.dartsvoice.status = "unloaded";
+  chrome.runtime.sendMessage("setdata window status "+window.dartsvoice.windowid + " false", (res) => {});
+}
 
 // detect new selected dialect
 chrome.storage.local.get('dialectCode', function (items) {
@@ -70,7 +99,6 @@ chrome.storage.local.get('dialectCode', function (items) {
 
   chrome.storage.local.remove('dialectCode');
 });
-
 
 function enterResult(transcript) {
   document.querySelector(".input_area").dispatchEvent(
@@ -97,6 +125,8 @@ function errorHandle(event) {
       console.error(
         "The user has denied permission to use the speech recognition service"
       );
+      break;
+    case "aborted":
       break;
     default:
       console.error(event.error);

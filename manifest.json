@@ -3,21 +3,28 @@
   "name": "...",
   "description": "...",
   "version": "1.0",
-  "permissions": ["https://nakka.com/n01/", "https://nakka.com/n01/online/n01.php", "storage"],
+  "permissions": [
+    "https://nakka.com/n01/"
+    , "https://nakka.com/n01/online/n01.php",
+    "storage", 
+    "activeTab",
+    "tabs",
+    "nativeMessaging"
+    ],
 
   "browser_action": {
-      "default_icon": "dart.png",
-      "default_title": "...",
-      "default_popup": "popup.html"
-    },
+    "default_icon": "dart.png",
+    "default_title": "...",
+    "default_popup": "popup.html"
+  },
 
   "web_accessible_resources": ["popup.css", "popup.js"],
 
   "background": {
-      "scripts": ["background.js"]
-    },
-    "content_scripts": [{
-      "matches": ["https://nakka.com/*"],
-      "js": ["content.js"]
-    }]
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [{
+    "matches": ["https://nakka.com/*"],
+    "js": ["content.js"]
+  }]
 }
