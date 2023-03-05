@@ -24,9 +24,11 @@ window.dartsvoice.load = function(windowid, force) {
     window.dartsvoice.recognition.onresult = window.dartsvoice.onvoicedetect;
     window.dartsvoice.recognition.onerror = window.dartsvoice.onvoiceerror;
     window.dartsvoice.recognition.stop = window.dartsvoice.onvoicestop;
-    window.dartsvoice.recognition.addEventListener('end', window.dartsvoice.start);
+    window.dartsvoice.recognition.addEventListener('end', () => {
+      window.dartsvoice.start(false);
+    });
     window.dartsvoice.status = "success_loaded"
-    window.dartsvoice.start()
+    window.dartsvoice.start(true)
     chrome.runtime.sendMessage("setdata window status "+windowid + " true", (res) => {});
   }else {
     window.dartsvoice.status = "failed_unsupported"
@@ -67,19 +69,28 @@ window.dartsvoice.onvoiceerror = function(event) {
 }
 
 window.dartsvoice.onvoicestop = function(event) {
-  window.dartsvoice.recognition.abort();
+  //window.dartsvoice.recognition.abort();
 }
 
 window.dartsvoice.reloadLang = function(lang) {
   window.dartsvoice.recognition.lang = lang
 }
 
-window.dartsvoice.start = function() {
-  window.dartsvoice.recognition.start();
+window.dartsvoice.start = function(force) {
+  if(force) {
+    window.dartsvoice.recognition.start();
+  }else {
+    if(window.dartsvoice.status == "success_loaded") {
+      window.dartsvoice.recognition.start();
+    }
+  }
 }
 
 window.dartsvoice.stop = function() {
-  window.dartsvoice.recognition.stop();
+  window.dartsvoice.recognition.abort();
+  window.dartsvoice.recognition = undefined;
+  window.dartsvoice.status = "unloaded";
+  chrome.runtime.sendMessage("setdata window status "+window.dartsvoice.windowid + " false", (res) => {});
 }
 
 // detect new selected dialect
@@ -114,6 +125,8 @@ function errorHandle(event) {
       console.error(
         "The user has denied permission to use the speech recognition service"
       );
+      break;
+    case "aborted":
       break;
     default:
       console.error(event.error);
