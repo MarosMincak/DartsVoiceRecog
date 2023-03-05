@@ -27,7 +27,7 @@ window.dartsvoice.load = function(windowid, force) {
     window.dartsvoice.recognition.addEventListener('end', window.dartsvoice.start);
     window.dartsvoice.status = "success_loaded"
     window.dartsvoice.start()
-    chrome.runtime.sendMessage("web-winodow-update-"+windowid, (res) => {});
+    chrome.runtime.sendMessage("setdata window status "+windowid + " true", (res) => {});
   }else {
     window.dartsvoice.status = "failed_unsupported"
   }

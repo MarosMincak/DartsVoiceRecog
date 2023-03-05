@@ -106,7 +106,7 @@ function getActiveTabID() {
 async function Load() {
   var speechSwitch = document.getElementById('speech-switch');
   var activetab = await getActiveTabID();
-  chrome.runtime.sendMessage("get-web-winodow-update-"+activetab, (res) => {
+  chrome.runtime.sendMessage("getdata window status "+activetab, (res) => {
     if(res == true) {
       speechSwitch.checked = true;
     }
