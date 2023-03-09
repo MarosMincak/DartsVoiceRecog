@@ -7,9 +7,7 @@
     "https://nakka.com/n01/"
     , "https://nakka.com/n01/online/n01.php",
     "storage", 
-    "activeTab",
-    "tabs",
-    "nativeMessaging"
+    "activeTab"
     ],
 
   "browser_action": {
