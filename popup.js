@@ -131,9 +131,9 @@ async function Load() {
     if (speechSwitch.checked) {
       chrome.scripting.executeScript({
         target: {tabId: activetab},
-        args: [false],
-        function: () => {
-          window.dartsvoice.load();
+        args: [activetab, false],
+        function: (a, f) => {
+          window.dartsvoice.load(a, f);
         }
       });
     } else {
