@@ -65,7 +65,7 @@ var langs =
 // pass message to content.js
 function passMessageToDialect(data){    
   chrome.storage.local.set(data, function () {
-      chrome.tabs.executeScript({
+      chrome.scripting.executeScript({
           file: "content.js"
       });
   });
@@ -111,6 +111,7 @@ async function Load() {
       speechSwitch.checked = true;
     }
   });
+  /*
   speechSwitch.addEventListener('change', function() {
     if (speechSwitch.checked) {
       chrome.tabs.executeScript({
@@ -120,6 +121,28 @@ async function Load() {
       // Stop speech recognition
       chrome.tabs.executeScript({
         code: "window.dartsvoice.stop()",
+      });
+    }
+  });
+  */
+
+  // V3 manifest
+  speechSwitch.addEventListener('change', function() {
+    if (speechSwitch.checked) {
+      chrome.scripting.executeScript({
+        target: {tabId: activetab},
+        args: [false],
+        function: () => {
+          window.dartsvoice.load();
+        }
+      });
+    } else {
+      // Stop speech recognition
+      chrome.scripting.executeScript({
+        target: {tabId: activetab},
+        function: () => {
+          window.dartsvoice.stop();
+        }
       });
     }
   });
