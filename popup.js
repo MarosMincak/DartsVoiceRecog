@@ -102,50 +102,108 @@ function getActiveTabID() {
     });
   })
 }
+function getActiveTabURL() {
+  return new Promise(resolve => {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      var currTab = tabs[0];
+      if (currTab != undefined) { 
+        resolve(currTab.url);
+      }else {
+        resolve(0);
+      }
+    });
+  })
+}
+
+function WarnMsg(msg, type) {
+  if(type == "fatal" || type == undefined) {
+    document.getElementById("warnbox").classList = "warnbox fatal";
+  }else if(type == "warn") {
+    document.getElementById("warnbox").classList = "warnbox warn";
+  } else {
+    document.getElementById("warnbox").classList = "warnbox fatal";
+  }
+  document.getElementById("warnbox-msg").innerText = msg;
+}
+
+let switch_state = false;
+let switch_inanim = false;
+let speechSwitch = document.getElementById('mainswitch');
+let activetab = 0;
+let url = "";
+let blocked = false;
+
+function OnMainSwitch() {
+  if(blocked) {WarnMsg("Unsupported website, cann't turn on", "fatal"); return;}
+  if(switch_inanim) {return;}
+  if(switch_state) {
+    switch_state = false;
+    switch_inanim = true;
+    speechSwitch.classList = "csswitchbody animoff";
+    setTimeout(() => {
+      speechSwitch.classList = "csswitchbody";
+      switch_inanim = false;
+    }, 740);
+  }else {
+    speechSwitch.classList = "csswitchbody animon";
+    switch_state = true;
+    switch_inanim = true;
+    setTimeout(() => {
+      speechSwitch.classList = "csswitchbody active";
+      switch_inanim = false;
+    }, 730);
+  }
+  if (switch_state) {
+    chrome.scripting.executeScript({
+      target: {tabId: activetab},
+      args: [activetab, false],
+      function: (a, f) => {
+        window.dartsvoice.load(a, f);
+      }
+    });
+  } else {
+    // Stop speech recognition
+    chrome.scripting.executeScript({
+      target: {tabId: activetab},
+      function: () => {
+        window.dartsvoice.stop();
+      }
+    });
+  }
+}
+function IsSupportedURL(url) {
+  if(url.startsWith("https://nakka.com/") || url.startsWith("http://nakka.com/")) {
+    return true;
+  }
+  return false;
+}
 
 async function Load() {
-  var speechSwitch = document.getElementById('speech-switch');
-  var activetab = await getActiveTabID();
+  var speechSwitch = document.getElementById('mainswitch');
+  activetab = await getActiveTabID();
+  url = await getActiveTabURL();
+  if(!IsSupportedURL(url)) {
+    blocked = true;
+    WarnMsg("Unsupported website", "fatal");
+  }
   chrome.runtime.sendMessage("getdata window status "+activetab, (res) => {
     if(res == true) {
-      speechSwitch.checked = true;
+      speechSwitch.classList = "csswitchbody active";
+      switch_state = true;
     }
   });
-  /*
-  speechSwitch.addEventListener('change', function() {
-    if (speechSwitch.checked) {
-      chrome.tabs.executeScript({
-        code: 'window.dartsvoice.load('+activetab+', false)'
-      });
-    } else {
-      // Stop speech recognition
-      chrome.tabs.executeScript({
-        code: "window.dartsvoice.stop()",
-      });
-    }
-  });
-  */
 
   // V3 manifest
-  speechSwitch.addEventListener('change', function() {
-    if (speechSwitch.checked) {
-      chrome.scripting.executeScript({
-        target: {tabId: activetab},
-        args: [activetab, false],
-        function: (a, f) => {
-          window.dartsvoice.load(a, f);
-        }
-      });
-    } else {
-      // Stop speech recognition
-      chrome.scripting.executeScript({
-        target: {tabId: activetab},
-        function: () => {
-          window.dartsvoice.stop();
-        }
-      });
+  speechSwitch.addEventListener('click', OnMainSwitch);
+
+  //On app change
+  document.getElementById("select_darts_application").addEventListener("change", (event) => {
+    var value = event.target.value;
+    if(value != "nakka") {
+      WarnMsg("This application is unsupported yet.", "warn");
+      document.getElementById("select_darts_application").value = "nakka";
     }
-  });
+  })
 
   var countrySwitch = document.getElementById('select_language'),
       dialectSelect =  document.getElementById('select_dialect');

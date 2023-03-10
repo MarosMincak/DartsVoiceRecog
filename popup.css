@@ -75,6 +75,15 @@ nav > h1 {
   border: rgba(255, 0, 0, 0.6) solid 1px;
   background-color: rgba(255, 0, 0, 0.2);
 }
+.warnbox.warn {
+  border: rgba(200, 200, 0, 0.6) solid 1px;
+  background-color: rgba(200, 200, 0, 0.2);
+}
+.warnbox.hide {
+  border: rgba(0, 0, 0, 0) solid 1px;
+  background-color: rgba(0, 0, 0, 0);
+}
+.warnbox.hide > p {display: none;}
 .warnbox > p {
   margin-top: 0;
   margin-bottom: 0;
@@ -84,6 +93,9 @@ nav > h1 {
 }
 .warnbox.fatal > #warn-icon {
   background-image: url("icon-error.svg");
+}
+.warnbox.warn > #warn-icon {
+  background-image: url("icon-warn.svg");
 }
 /* Main Settings */
 .selection-line {
@@ -129,10 +141,10 @@ nav > h1 {
   background-color: #2196f3;
 }
 .csswitch > .csswitchbody.animon {
-  animation: switch_on_a 750ms;
+  animation: switch_on_a 765ms;
 }
 .csswitch > .csswitchbody.animon > .csss {
-  animation: switch_on_b 750ms;
+  animation: switch_on_b 765ms;
 }
 .csswitch > .csswitchbody.animoff {
   animation: switch_off_a 750ms;
