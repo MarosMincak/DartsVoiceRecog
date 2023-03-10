@@ -1,26 +1,29 @@
 {
-  "manifest_version": 2,
-  "name": "...",
-  "description": "...",
+  "manifest_version": 3,
+  "name": "Voice Darts",
+  "description": "Rozšírenie pre hráčov šípok v aplikácií Nakka v slovenčine pre zaznamenávanie skóre hlasom namiesto klávesnice",
   "version": "1.0",
   "permissions": [
-    "https://nakka.com/n01/"
-    , "https://nakka.com/n01/online/n01.php",
     "storage", 
-    "activeTab"
+    "activeTab",
+    "scripting"
     ],
 
-  "browser_action": {
+  "action": {
     "default_icon": "dart.png",
     "default_title": "...",
     "default_popup": "popup.html"
   },
 
-  "web_accessible_resources": ["popup.css", "popup.js"],
+  "web_accessible_resources": [{ 
+  "resources": ["popup.css", "popup.js"],
+  "matches": ["<all_urls>"]
+}],
 
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
+  
   "content_scripts": [{
     "matches": ["https://nakka.com/*"],
     "js": ["content.js"]
