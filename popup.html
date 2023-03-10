@@ -2,31 +2,49 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Speech to Text Extension</title>
+    <title>Voice Darts</title>
     <link rel="stylesheet" type="text/css" href="popup.css" />
   </head>
   <body>
-    <div id="switch-container">
+    <nav>
+      <div id="logo-img"></div>
+      <h1>Voice Darts</h1>
+      <div id="setting-button"><div id="settings-img"></div></div>
+    </nav>
+    <div class="warnbox fatal">
+      <div id="warn-icon"></div>
+      <p>Message from extension</p>
+    </div>
+    <!--<div id="switch-container">
       <label class="switch">
         <input type="checkbox" id="speech-switch" />
         <span class="slider round"></span>
       </label>
+    </div>-->
+    <div class="csswitch">
+      <div class="csswitchbody">
+        <div class="csss"></div>
+      </div>
     </div>
-    <div id="dartsApp">
+    <div class="selection-line sl-line"> 
+      <span>Application</span>
       <select
-        id="select_darts_application"
-        name="selectDartsApp"
+          id="select_darts_application"
+          name="selectDartsApp"
       >
-        <option selected >Nakka</option>
-        <option >DartConnect</option>
-        <option >Lidarts</option>
-        <option >Darts-Scoring</option>
-        <option >King of Darts</option>
+        <option selected value="nakka">Nakka</option>
+        <option value="dartconnect">DartConnect</option>
+        <option value="lidarts">Lidarts</option>
+        <option value="darts-scoring">Darts-Scoring</option>
+        <option value="king_of_darts">King of Darts</option>
       </select>
     </div>
-
-    <div id="language">
+    <div class="selection-line sl-line">
+      <span>Language</span>
       <select id="select_language" name="selectLanguage"></select>
+    </div>
+    <div class="selection-line sl-line">
+      <span>Dialect</span>
       <select
         id="select_dialect"
         name="selectDialect"
@@ -36,4 +54,3 @@
     <script src="popup.js"></script>
   </body>
 </html>
-<!--New Code!-->
