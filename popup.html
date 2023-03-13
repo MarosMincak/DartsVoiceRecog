@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <title>Voice Darts</title>
     <link rel="stylesheet" type="text/css" href="popup.css" />
+    <script src="lang.js"></script>
   </head>
   <body>
     <nav>
@@ -21,7 +22,7 @@
       </div>
     </div>
     <div class="selection-line sl-line"> 
-      <span>Application</span>
+      <span id="label_app">Application</span>
       <select
           id="select_darts_application"
           name="selectDartsApp"
@@ -34,15 +35,16 @@
       </select>
     </div>
     <div class="selection-line sl-line">
-      <span>Language</span>
+      <span id="label_lang">Language</span>
       <select id="select_language" name="selectLanguage"></select>
     </div>
     <div class="selection-line sl-line">
-      <span>Dialect</span>
+      <span id="label_dialect">Dialect</span>
       <select
         id="select_dialect"
         name="selectDialect"
       >
+        <option selecetd>Default</option>
       </select>
     </div>
     <script src="popup.js"></script>
