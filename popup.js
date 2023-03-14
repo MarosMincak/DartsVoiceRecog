@@ -1,4 +1,6 @@
-var langs =
+const debug = false;
+
+var supported_langs =
 [['Afrikaans',       ['af-ZA']],
  ['Bahasa Indonesia',['id-ID']],
  ['Bahasa Melayu',   ['ms-MY']],
@@ -71,25 +73,7 @@ function passMessageToDialect(data){
   });
 }
 
-function appendOptions(select, text, value){
-  var el = document.createElement("option");
-  el.textContent = text;
-  el.value = value;
-  // no other dialects
-  if(text === "Default") {
-    el.readonly = true;
-  }
-  
-  select.appendChild(el);
-}
-
-function removeOptions(selectElement) {
-  var i, L = selectElement.options.length - 1;
-  for(i = L; i >= 0; i--) {
-     selectElement.remove(i);
-  }
-}
-
+/* Browsher API */
 function getActiveTabID() {
   return new Promise(resolve => {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -102,57 +86,137 @@ function getActiveTabID() {
     });
   })
 }
+function getActiveTabURL() {
+  return new Promise(resolve => {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      var currTab = tabs[0];
+      if (currTab != undefined) { 
+        resolve(currTab.url);
+      }else {
+        resolve(0);
+      }
+    });
+  })
+}
 
+/* UI Functions */
+function removeOptions(selectElement) {
+  var i, L = selectElement.options.length - 1;
+  for(i = L; i >= 0; i--) {
+     selectElement.remove(i);
+  }
+}
+function appendOptions(select, text, value){
+  var el = document.createElement("option");
+  el.textContent = text;
+  el.value = value;
+  // no other dialects
+  if(text === LangString("texts.def")) {
+    el.readonly = true;
+  }
+  
+  select.appendChild(el);
+}
+function WarnMsg(msg, type) {
+  if(type == "fatal" || type == undefined) {
+    document.getElementById("warnbox").classList = "warnbox fatal";
+  }else if(type == "warn") {
+    document.getElementById("warnbox").classList = "warnbox warn";
+  } else {
+    document.getElementById("warnbox").classList = "warnbox fatal";
+  }
+  document.getElementById("warnbox-msg").innerText = msg;
+}
+
+/* Custom Functions */
+function IsSupportedURL(url) {
+  if(url.startsWith("https://nakka.com/") || url.startsWith("http://nakka.com/")) {
+    return true;
+  }
+  return false;
+}
+
+/* Variables */
+let switch_state = false;
+let switch_inanim = false;
+let speechSwitch = document.getElementById('mainswitch');
+let activetab = 0;
+let url = "";
+let blocked = false;
+
+/* Component Functions */
+function OnMainSwitch() {
+  if(blocked) {WarnMsg(LangString("message.unsupported_switch"), "fatal"); return;}
+  if(switch_inanim) {return;}
+  if(switch_state) {
+    switch_state = false;
+    switch_inanim = true;
+    speechSwitch.classList = "csswitchbody animoff";
+    setTimeout(() => {
+      speechSwitch.classList = "csswitchbody";
+      switch_inanim = false;
+    }, 740);
+  }else {
+    speechSwitch.classList = "csswitchbody animon";
+    switch_state = true;
+    switch_inanim = true;
+    setTimeout(() => {
+      speechSwitch.classList = "csswitchbody active";
+      switch_inanim = false;
+    }, 730);
+  }
+  if (switch_state) {
+    chrome.scripting.executeScript({
+      target: {tabId: activetab},
+      args: [activetab, false],
+      function: (a, f) => {
+        window.dartsvoice.load(a, f);
+      }
+    });
+  } else {
+    // Stop speech recognition
+    chrome.scripting.executeScript({
+      target: {tabId: activetab},
+      function: () => {
+        window.dartsvoice.stop();
+      }
+    });
+  }
+}
+
+/* Main Functions */
 async function Load() {
-  var speechSwitch = document.getElementById('speech-switch');
-  var activetab = await getActiveTabID();
+  var speechSwitch = document.getElementById('mainswitch');
+  activetab = await getActiveTabID();
+  url = await getActiveTabURL();
+  if(!IsSupportedURL(url)) {
+    blocked = true;
+    WarnMsg(LangString("message.unsupported_website"), "fatal");
+  }
   chrome.runtime.sendMessage("getdata window status "+activetab, (res) => {
     if(res == true) {
-      speechSwitch.checked = true;
+      speechSwitch.classList = "csswitchbody active";
+      switch_state = true;
     }
   });
-  /*
-  speechSwitch.addEventListener('change', function() {
-    if (speechSwitch.checked) {
-      chrome.tabs.executeScript({
-        code: 'window.dartsvoice.load('+activetab+', false)'
-      });
-    } else {
-      // Stop speech recognition
-      chrome.tabs.executeScript({
-        code: "window.dartsvoice.stop()",
-      });
-    }
-  });
-  */
 
-  // V3 manifest
-  speechSwitch.addEventListener('change', function() {
-    if (speechSwitch.checked) {
-      chrome.scripting.executeScript({
-        target: {tabId: activetab},
-        args: [false],
-        function: () => {
-          window.dartsvoice.load();
-        }
-      });
-    } else {
-      // Stop speech recognition
-      chrome.scripting.executeScript({
-        target: {tabId: activetab},
-        function: () => {
-          window.dartsvoice.stop();
-        }
-      });
+  speechSwitch.addEventListener('click', OnMainSwitch);
+
+  //On app change
+  document.getElementById("select_darts_application").addEventListener("change", (event) => {
+    var value = event.target.value;
+    if(value != "nakka") {
+      WarnMsg(LangString("message.unsupported_app"), "warn");
+      document.getElementById("select_darts_application").value = "nakka";
     }
-  });
+  })
 
   var countrySwitch = document.getElementById('select_language'),
       dialectSelect =  document.getElementById('select_dialect');
 
-  for(var i = 0; i < langs.length; i++) {
+  for(var i = 0; i < supported_langs.length; i++) {
       // append countries
-      appendOptions(countrySwitch, langs[i][0], i)
+      appendOptions(countrySwitch, supported_langs[i][0], i)
   }
   // trigger change country
   countrySwitch.dispatchEvent(new Event('change'))
@@ -162,9 +226,9 @@ async function Load() {
     // clear all dialect options
     removeOptions(dialectSelect)
     // append dialect by country - loop through dialects
-    for(var i = 1; i < langs[value].length; i++) {
-      var code = langs[value][i][0],
-          text = langs[value][i][1] || "Default"; 
+    for(var i = 1; i < supported_langs[value].length; i++) {
+      var code = supported_langs[value][i][0],
+          text = supported_langs[value][i][1] || LangString("texts.def"); 
       // append countries
       appendOptions(dialectSelect, text, code)
     }
@@ -183,6 +247,17 @@ async function Load() {
       })
     }
   })
+
+  document.getElementById("label_lang").innerText = LangString("label.lang")
+  document.getElementById("label_dialect").innerText = LangString("label.dialect")
+  document.getElementById("label_app").innerText = LangString("label.app")
 } 
 
+/* Register Events */
 document.addEventListener("DOMContentLoaded", Load);
+
+if(!debug) {
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+  })
+}
