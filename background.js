@@ -43,7 +43,11 @@ chrome.runtime.onMessage.addListener((message, sender, res) => {
 registerCommand("getwindow", (name, args) => {
   if(args.length == 1) {
     if(website_data.find(o => o.webid == args[0]) == undefined) {
-      return false;
+      return {
+        status: false,
+        lang: "sk-SK",
+        dialect: ""
+      };
     }else {
       return website_data.find(o => o.webid == args[0]);
     }

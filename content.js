@@ -19,17 +19,20 @@ window.dartsvoice.load = function(windowid, force) {
     // Set interimResults to true to receive results as they are recognized
     window.dartsvoice.recognition.interimResults = true;
     //Set the language for recognition
-    window.dartsvoice.reloadLang(default_language)
+    
+    chrome.runtime.sendMessage("getwindow "+windowid, (res) => {
+       window.dartsvoice.reloadLang(res.lang)
 
-    window.dartsvoice.recognition.onresult = window.dartsvoice.onvoicedetect;
-    window.dartsvoice.recognition.onerror = window.dartsvoice.onvoiceerror;
-    window.dartsvoice.recognition.stop = window.dartsvoice.onvoicestop;
-    window.dartsvoice.recognition.addEventListener('end', () => {
-      window.dartsvoice.start(false);
+       window.dartsvoice.recognition.onresult = window.dartsvoice.onvoicedetect;
+      window.dartsvoice.recognition.onerror = window.dartsvoice.onvoiceerror;
+      window.dartsvoice.recognition.stop = window.dartsvoice.onvoicestop;
+      window.dartsvoice.recognition.addEventListener('end', () => {
+        window.dartsvoice.start(false);
+      });
+      window.dartsvoice.status = "success_loaded"
+      window.dartsvoice.start(true)
+      chrome.runtime.sendMessage("setdata window status "+windowid + " true", (res) => {});
     });
-    window.dartsvoice.status = "success_loaded"
-    window.dartsvoice.start(true)
-    chrome.runtime.sendMessage("setdata window status "+windowid + " true", (res) => {});
   }else {
     window.dartsvoice.status = "failed_unsupported"
   }
