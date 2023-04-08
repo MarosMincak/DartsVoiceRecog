@@ -160,7 +160,7 @@ function WarnMsg(msg, type) {
 
 /* Custom Functions */
 function IsSupportedURL(url) {
-  if(url.startsWith("https://nakka.com/") || url.startsWith("http://nakka.com/")) {
+  if(url.startsWith("https://nakka.com/n01/app/") || url.startsWith("http://nakka.com/n01/app/")) {
     return true;
   }
   return false;
