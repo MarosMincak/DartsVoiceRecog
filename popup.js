@@ -175,7 +175,7 @@ let url = "";
 let blocked = false;
 
 /* Component Functions */
-function OnMainSwitch() {
+function OnMainSwitch(action) {
   if(blocked) {WarnMsg(LangString("message.unsupported_switch"), "fatal"); return;}
   if(switch_inanim) {return;}
   if(switch_state) {
@@ -195,22 +195,24 @@ function OnMainSwitch() {
       switch_inanim = false;
     }, 730);
   }
-  if (switch_state) {
-    chrome.scripting.executeScript({
-      target: {tabId: activetab},
-      args: [activetab, false],
-      function: (a, f) => {
-        window.dartsvoice.load(a, f);
-      }
-    });
-  } else {
-    // Stop speech recognition
-    chrome.scripting.executeScript({
-      target: {tabId: activetab},
-      function: () => {
-        window.dartsvoice.stop();
-      }
-    });
+  if(action) {
+    if (switch_state) {
+      chrome.scripting.executeScript({
+        target: {tabId: activetab},
+        args: [activetab, false],
+        function: (a, f) => {
+          window.dartsvoice.load(a, f);
+        }
+      });
+    } else {
+      // Stop speech recognition
+      chrome.scripting.executeScript({
+        target: {tabId: activetab},
+        function: () => {
+          window.dartsvoice.stop();
+        }
+      });
+    }
   }
 }
 
@@ -233,11 +235,17 @@ async function Load() {
     if(res.lang != "") {
       var obj = findLang(res.lang);
       countrySwitch.value = findLangId(res.lang);
-      dialectSelect.value = obj.dialect;
+      for(var i = 1; i < supported_langs[countrySwitch.value].length; i++) {
+        var code = supported_langs[countrySwitch.value][i][0],
+            text = supported_langs[countrySwitch.value][i][1] || LangString("texts.def"); 
+        // append countries
+        appendOptions(dialectSelect, text, code)
+      }
+      dialectSelect.value = obj.id;
     }
   });
 
-  speechSwitch.addEventListener('click', OnMainSwitch);
+  speechSwitch.addEventListener('click', () => {OnMainSwitch(true)});
 
   //On app change
   document.getElementById("select_darts_application").addEventListener("change", (event) => {
@@ -272,19 +280,7 @@ async function Load() {
   });
 
   dialectSelect.addEventListener('change', function(event) {
-    var value = event.target.value
-
-    chrome.runtime.sendMessage("setdata window lang " + activetab + " " + value, (res) => {
-      if(res == true) {
-        chrome.scripting.executeScript({
-          target: {tabId: activetab},
-          function: () => {
-            window.dartsvoice.stop();
-          }
-        });
-        window.close()
-      }
-    })
+    OnCountrySwitch(event, false);
   })
 
   document.getElementById("label_lang").innerText = LangString("label.lang")
@@ -298,5 +294,25 @@ document.addEventListener("DOMContentLoaded", Load);
 if(!debug) {
   document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
+  })
+}
+
+function OnCountrySwitch(event, force) {
+  var value = event.target.value
+
+  chrome.runtime.sendMessage("setdata window lang " + activetab + " " + value, (res) => {
+    if(res == true) {
+      if(!force) {
+        chrome.scripting.executeScript({
+          target: {tabId: activetab},
+          function: () => {
+            window.dartsvoice.stop();
+          }
+        });
+        if(switch_state) {
+          OnMainSwitch(false);
+        }
+      }
+    }
   })
 }

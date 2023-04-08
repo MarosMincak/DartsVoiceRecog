@@ -90,6 +90,9 @@ window.dartsvoice.start = function(force) {
 }
 
 window.dartsvoice.stop = function() {
+  if(window.dartsvoice.status != "success_loaded") {
+    return;
+  }
   window.dartsvoice.recognition.abort();
   window.dartsvoice.recognition = undefined;
   window.dartsvoice.status = "unloaded";
