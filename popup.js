@@ -117,6 +117,36 @@ function appendOptions(select, text, value){
   
   select.appendChild(el);
 }
+function findLang(id) {
+  for(let i = 0; i < supported_langs.length; i++) {
+    if(id.startsWith(supported_langs[i][1][0].substring(0, 3))) {
+      for(let j = 1; j < supported_langs[i].length; j++) {
+        if(supported_langs[i][j][0] == id) {
+          let dialect = "Default";
+          if(supported_langs[i][j][1] != undefined) {dialect = supported_langs[i][j][1];}
+          return {
+            name: supported_langs[i][0],
+            dialect: dialect,
+            id: supported_langs[i][j][0]
+          }
+        }
+      }
+    }
+  }
+  return {
+    name: "Slovak",
+    dialect: "Default",
+    id: "sk-sk"
+  }
+}
+function findLangId(string_id) {
+  for(let i = 0; i < supported_langs.length; i++) {
+    if(string_id.startsWith(supported_langs[i][1][0].substring(0, 3))) {
+      return i;
+    }
+  }
+  return 0;
+}
 function WarnMsg(msg, type) {
   if(type == "fatal" || type == undefined) {
     document.getElementById("warnbox").classList = "warnbox fatal";
@@ -130,7 +160,7 @@ function WarnMsg(msg, type) {
 
 /* Custom Functions */
 function IsSupportedURL(url) {
-  if(url.startsWith("https://nakka.com/") || url.startsWith("http://nakka.com/")) {
+  if(url.startsWith("https://nakka.com/n01/app/") || url.startsWith("http://nakka.com/n01/app/")) {
     return true;
   }
   return false;
@@ -145,7 +175,7 @@ let url = "";
 let blocked = false;
 
 /* Component Functions */
-function OnMainSwitch() {
+function OnMainSwitch(action) {
   if(blocked) {WarnMsg(LangString("message.unsupported_switch"), "fatal"); return;}
   if(switch_inanim) {return;}
   if(switch_state) {
@@ -165,22 +195,24 @@ function OnMainSwitch() {
       switch_inanim = false;
     }, 730);
   }
-  if (switch_state) {
-    chrome.scripting.executeScript({
-      target: {tabId: activetab},
-      args: [activetab, false],
-      function: (a, f) => {
-        window.dartsvoice.load(a, f);
-      }
-    });
-  } else {
-    // Stop speech recognition
-    chrome.scripting.executeScript({
-      target: {tabId: activetab},
-      function: () => {
-        window.dartsvoice.stop();
-      }
-    });
+  if(action) {
+    if (switch_state) {
+      chrome.scripting.executeScript({
+        target: {tabId: activetab},
+        args: [activetab, false],
+        function: (a, f) => {
+          window.dartsvoice.load(a, f);
+        }
+      });
+    } else {
+      // Stop speech recognition
+      chrome.scripting.executeScript({
+        target: {tabId: activetab},
+        function: () => {
+          window.dartsvoice.stop();
+        }
+      });
+    }
   }
 }
 
@@ -189,18 +221,31 @@ async function Load() {
   var speechSwitch = document.getElementById('mainswitch');
   activetab = await getActiveTabID();
   url = await getActiveTabURL();
+  var countrySwitch = document.getElementById('select_language'),
+      dialectSelect =  document.getElementById('select_dialect');
   if(!IsSupportedURL(url)) {
     blocked = true;
     WarnMsg(LangString("message.unsupported_website"), "fatal");
   }
-  chrome.runtime.sendMessage("getdata window status "+activetab, (res) => {
-    if(res == true) {
+  chrome.runtime.sendMessage("getwindow "+activetab, (res) => {
+    if(res.status == true) {
       speechSwitch.classList = "csswitchbody active";
       switch_state = true;
     }
+    if(res.lang != "") {
+      var obj = findLang(res.lang);
+      countrySwitch.value = findLangId(res.lang);
+      for(var i = 1; i < supported_langs[countrySwitch.value].length; i++) {
+        var code = supported_langs[countrySwitch.value][i][0],
+            text = supported_langs[countrySwitch.value][i][1] || LangString("texts.def"); 
+        // append countries
+        appendOptions(dialectSelect, text, code)
+      }
+      dialectSelect.value = obj.id;
+    }
   });
 
-  speechSwitch.addEventListener('click', OnMainSwitch);
+  speechSwitch.addEventListener('click', () => {OnMainSwitch(true)});
 
   //On app change
   document.getElementById("select_darts_application").addEventListener("change", (event) => {
@@ -210,9 +255,6 @@ async function Load() {
       document.getElementById("select_darts_application").value = "nakka";
     }
   })
-
-  var countrySwitch = document.getElementById('select_language'),
-      dialectSelect =  document.getElementById('select_dialect');
 
   for(var i = 0; i < supported_langs.length; i++) {
       // append countries
@@ -238,14 +280,7 @@ async function Load() {
   });
 
   dialectSelect.addEventListener('change', function(event) {
-    var value = event.target.value
-
-    if(value){
-      // send dialect to content.js
-      passMessageToDialect({
-        dialectCode: value
-      })
-    }
+    OnCountrySwitch(event, false);
   })
 
   document.getElementById("label_lang").innerText = LangString("label.lang")
@@ -259,5 +294,25 @@ document.addEventListener("DOMContentLoaded", Load);
 if(!debug) {
   document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
+  })
+}
+
+function OnCountrySwitch(event, force) {
+  var value = event.target.value
+
+  chrome.runtime.sendMessage("setdata window lang " + activetab + " " + value, (res) => {
+    if(res == true) {
+      if(!force) {
+        chrome.scripting.executeScript({
+          target: {tabId: activetab},
+          function: () => {
+            window.dartsvoice.stop();
+          }
+        });
+        if(switch_state) {
+          OnMainSwitch(false);
+        }
+      }
+    }
   })
 }

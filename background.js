@@ -18,8 +18,8 @@ function toBoolean(str) {
   return false;
 }
 
-chrome.runtime.onMessage.addListener((message, sender, res) => {
-  let segments = message.split(" ");
+function runCommand(cmd) {
+  let segments = cmd.split(" ");
   var name = ""
   var args = []
   for(var i = 0; i < segments.length; i++) {
@@ -30,9 +30,29 @@ chrome.runtime.onMessage.addListener((message, sender, res) => {
     }
   }
   if(commands.find(o => o.name == name) == undefined) {
-    res("undefined")
+    return "undefined"
   }else {
-    res(commands.find(o => o.name == name).oncommand(name, args))
+    return commands.find(o => o.name == name).oncommand(name, args)
+  }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, res) => {
+  res(runCommand(message))
+})
+
+registerCommand("getwindow", (name, args) => {
+  if(args.length == 1) {
+    if(website_data.find(o => o.webid == args[0]) == undefined) {
+      return {
+        status: false,
+        lang: "sk-SK",
+        dialect: ""
+      };
+    }else {
+      return website_data.find(o => o.webid == args[0]);
+    }
+  }else {
+    return "undefined";
   }
 })
 
@@ -44,6 +64,18 @@ registerCommand("getdata", (name, args) => {
           return false;
         }else {
           return website_data.find(o => o.webid == args[2]).status;
+        }
+      }else if(args[1] == "lang") {
+        if(website_data.find(o => o.webid == args[2]) == undefined) {
+          return "sk-sk";
+        }else {
+          return website_data.find(o => o.webid == args[2]).lang;
+        }
+      }else if(args[1] == "dialect") {
+        if(website_data.find(o => o.webid == args[2]) == undefined) {
+          return "";
+        }else {
+          return website_data.find(o => o.webid == args[2]).dialect;
         }
       }else {
         return "undefined";
@@ -63,11 +95,39 @@ registerCommand("setdata", (name, args) => {
         if(website_data.find(o => o.webid == args[2]) == undefined) {
           website_data.push({
             webid: args[2],
-            status: toBoolean(args[3])
+            status: toBoolean(args[3]),
+            lang: "sk-sk",
+            dialect: ""
           })
           return true;
         }else {
           website_data.find(o => o.webid == args[2]).status = toBoolean(args[3])
+          return true;
+        }
+      }else if(args[1] == "lang") {
+        if(website_data.find(o => o.webid == args[2]) == undefined) {
+          website_data.push({
+            webid: args[2],
+            status: false,
+            lang: args[3],
+            dialect: ""
+          })
+          return true;
+        }else {
+          website_data.find(o => o.webid == args[2]).lang = args[3]
+          return true;
+        }
+      }else if(args[1] == "dialect") {
+        if(website_data.find(o => o.webid == args[2]) == undefined) {
+          website_data.push({
+            webid: args[2],
+            status: false,
+            lang: "sk-sk",
+            dialect: args[3]
+          })
+          return true;
+        }else {
+          website_data.find(o => o.webid == args[2]).dialect = args[3]
           return true;
         }
       }else {
