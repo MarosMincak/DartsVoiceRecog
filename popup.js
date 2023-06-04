@@ -316,3 +316,7 @@ function OnCountrySwitch(event, force) {
     }
   })
 }
+
+document.getElementById("setting-button").addEventListener("click", e => {
+  document.location.pathname = "settings.html";
+})
