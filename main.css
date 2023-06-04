@@ -9,6 +9,10 @@ body {
     margin: 0;
     padding: 0;
 }
+/* Strings */
+.app-name::after {
+    content: 'Voice Darts';
+}
 /* Images */
 #logo-img {
     background-image: url("dart.png");
