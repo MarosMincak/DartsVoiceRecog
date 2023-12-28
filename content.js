@@ -1,3 +1,17 @@
+const debug = false;
+function debugMessage(object, level) {
+  if(!debug) {
+    return;
+  }
+  switch(level) {
+    case "error":
+      console.error(object);
+      break;
+    default:
+      console.log(object);
+      break;
+  }
+}
 var selectedDialect = "sk-SK",
     recognition;
 
@@ -50,16 +64,15 @@ window.dartsvoice.onvoicedetect = function(event) {
       interim_transcript += event.results[i][0].transcript;
     }
   }
-  console.log(event.results[0][0]);
+  debugMessage(event.results[0][0]);
 
   // Filter the transcription to keep only the digits
   transcript = transcript.replace(/[^0-9]/g, "");
   interim_transcript = transcript.replace(/[^0-9]/g, "");
 
   // Log the filtered transcription to the console
-  console.log(transcript);
+  debugMessage(transcript);
 
-  console.log("\n");
   document.querySelector(".input_area").innerHTML = interim_transcript;
   document.querySelector(".input_area").innerHTML = transcript;
 
@@ -122,19 +135,17 @@ function enterResult(transcript) {
 function errorHandle(event) {
   switch (event.error) {
     case "network":
-      console.error("There was a network error");
+      debugMessage("There was a network error", "error");
       break;
     case "not-allowed":
-      console.error("The user has denied permission to use the microphone");
+      debugMessage("The user has denied permission to use the microphone", "error");
       break;
     case "service-not-allowed":
-      console.error(
-        "The user has denied permission to use the speech recognition service"
-      );
+      debugMessage("The user has denied permission to use the speech recognition service", "error");
       break;
     case "aborted":
       break;
     default:
-      console.error(event.error);
+      debugMessage(event.error, "error");
   }
 }
