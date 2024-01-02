@@ -25,7 +25,7 @@
   },
   
   "content_scripts": [{
-    "matches": ["https://nakka.com/*"],
+    "matches": ["https://n01darts.com/*"],
     "js": ["content.js"]
   }]
 }

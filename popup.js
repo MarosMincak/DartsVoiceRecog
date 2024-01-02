@@ -160,7 +160,11 @@ function WarnMsg(msg, type) {
 
 /* Custom Functions */
 function IsSupportedURL(url) {
+<<<<<<< Updated upstream
   if(url.startsWith("https://nakka.com") || url.startsWith("http://nakka.com")) {
+=======
+  if(url.startsWith("https://n01darts.com/n01/web/") || url.startsWith("http://n01darts.com/n01/web/")) {
+>>>>>>> Stashed changes
     return true;
   }
   return false;
