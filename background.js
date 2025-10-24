@@ -1,37 +1,42 @@
 const DEFAULT_WINDOW_STATE = Object.freeze({
   status: false,
-  lang: "sk-SK",
+  lang: "en-GB",
   dialect: "",
   lastError: null,
 });
 
-const windowStore = new Map();
+const storeKey = (windowId) => `dartsvoice:window:${windowId}`;
 
-function cloneState(state) {
+async function readWindowState(windowId) {
+  const key = storeKey(windowId);
+  const stored = await chrome.storage.local.get(key);
+  const state = stored[key];
+  if (!state) {
+    return { ...DEFAULT_WINDOW_STATE };
+  }
   return {
-    status: state.status,
-    lang: state.lang,
-    dialect: state.dialect,
-    lastError: state.lastError,
+    ...DEFAULT_WINDOW_STATE,
+    ...state,
   };
 }
 
-function ensureWindowState(windowId) {
-  if (!windowStore.has(windowId)) {
-    windowStore.set(windowId, { ...DEFAULT_WINDOW_STATE });
+async function updateWindowState(windowId, patch = {}) {
+  const current = await readWindowState(windowId);
+  const next = { ...current, ...patch };
+  await chrome.storage.local.set({ [storeKey(windowId)]: next });
+  return next;
+}
+
+async function clearWindowState(windowId) {
+  if (typeof windowId === "undefined") {
+    const all = await chrome.storage.local.get(null);
+    const removals = Object.keys(all).filter((key) => key.startsWith("dartsvoice:window:"));
+    if (removals.length) {
+      await chrome.storage.local.remove(removals);
+    }
+    return;
   }
-  return windowStore.get(windowId);
-}
-
-function readWindowState(windowId) {
-  const state = ensureWindowState(windowId);
-  return cloneState(state);
-}
-
-function updateWindowState(windowId, patch = {}) {
-  const state = ensureWindowState(windowId);
-  Object.assign(state, patch);
-  return cloneState(state);
+  await chrome.storage.local.remove(storeKey(windowId));
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -46,28 +51,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   const windowId = typeof message.windowId === "undefined" ? undefined : String(message.windowId);
 
-  switch (message.type) {
-    case "window:get": {
-      const data = readWindowState(windowId);
-      sendResponse({ ok: true, data });
-      break;
-    }
-    case "window:update": {
-      const patch = message.patch || {};
-      const data = updateWindowState(windowId, patch);
-      sendResponse({ ok: true, data });
-      break;
-    }
-    case "window:clear": {
-      if (typeof windowId === "undefined") {
-        windowStore.clear();
-      } else {
-        windowStore.delete(windowId);
+  (async () => {
+    switch (message.type) {
+      case "window:get": {
+        const data = await readWindowState(windowId);
+        sendResponse({ ok: true, data });
+        break;
       }
-      sendResponse({ ok: true });
-      break;
+      case "window:update": {
+        const patch = message.patch || {};
+        const data = await updateWindowState(windowId, patch);
+        sendResponse({ ok: true, data });
+        break;
+      }
+      case "window:clear": {
+        await clearWindowState(windowId);
+        sendResponse({ ok: true });
+        break;
+      }
+      default:
+        sendResponse({ ok: false, error: "unknown-command" });
     }
-    default:
-      sendResponse({ ok: false, error: "unknown-command" });
-  }
+  })().catch((error) => {
+    const messageText = error && error.message ? error.message : "storage-error";
+    sendResponse({ ok: false, error: messageText });
+  });
+
+  return true;
 });

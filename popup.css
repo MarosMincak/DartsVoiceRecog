@@ -68,21 +68,11 @@ p {
 
 .header__brand {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.header__logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0))
-      center/cover,
-    url("dart.png") center/cover no-repeat;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
-}
-
-.header__copy > p {
+.header__brand > p {
   font-size: 12px;
   color: var(--color-text-muted);
 }

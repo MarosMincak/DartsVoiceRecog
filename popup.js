@@ -78,7 +78,7 @@ const RAW_LANGUAGES = [
   ["Latin", ["la"]],
 ];
 
-const DEFAULT_DIALECT = "sk-SK";
+const DEFAULT_DIALECT = "en-GB";
 
 const LANGUAGES = RAW_LANGUAGES.map(([label, ...codes]) => ({
   label,
@@ -95,13 +95,15 @@ LANGUAGES.forEach((language, index) => {
   });
 });
 
+const DEFAULT_LANGUAGE_INDEX = DIALECT_TO_LANGUAGE.get(DEFAULT_DIALECT) ?? 0;
+
 const state = {
   tabId: null,
   url: "",
   blocked: false,
   listening: false,
   toggling: false,
-  selectedLanguageIndex: 0,
+  selectedLanguageIndex: DEFAULT_LANGUAGE_INDEX,
   selectedDialect: DEFAULT_DIALECT,
   lastError: null,
 };
@@ -156,6 +158,10 @@ function cacheDom() {
   dom.languageSelect = document.getElementById("select_language");
   dom.dialectSelect = document.getElementById("select_dialect");
   dom.statusText = document.getElementById("status-text");
+
+  if (dom.appSelect) {
+    dom.appSelect.value = "nakka";
+  }
 }
 
 function setAlert(message, tone = "info") {
@@ -230,6 +236,7 @@ function renderLanguageOptions() {
     option.textContent = language.label;
     dom.languageSelect.appendChild(option);
   });
+  dom.languageSelect.value = String(state.selectedLanguageIndex);
 }
 
 function renderDialectOptions(languageIndex, preferredCode) {
@@ -447,6 +454,7 @@ async function initialise() {
   cacheDom();
   applyLocalization();
   renderLanguageOptions();
+  renderDialectOptions(state.selectedLanguageIndex, state.selectedDialect);
   attachListeners();
   updateToggleUI();
   setStatusText(LangString("status.loading"));
@@ -487,7 +495,7 @@ async function initialise() {
   const languageIndex =
     DIALECT_TO_LANGUAGE.get(state.selectedDialect) ??
     DIALECT_TO_LANGUAGE.get(DEFAULT_DIALECT) ??
-    0;
+    DEFAULT_LANGUAGE_INDEX;
 
   state.selectedLanguageIndex = languageIndex;
 

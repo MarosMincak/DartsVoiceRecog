@@ -1,4 +1,5 @@
 const DEBUG = false;
+const MAX_SCORE = 180;
 
 const log = (value, level = "log") => {
   if (!DEBUG) {
@@ -22,30 +23,291 @@ const log = (value, level = "log") => {
     bubbles: true,
   };
 
+  const EN_ONES = {
+    zero: 0,
+    oh: 0,
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+  };
+
+  const EN_TEENS = {
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+    seventeen: 17,
+    eighteen: 18,
+    nineteen: 19,
+  };
+
+  const EN_TENS = {
+    twenty: 20,
+    thirty: 30,
+    forty: 40,
+    fifty: 50,
+    sixty: 60,
+    seventy: 70,
+    eighty: 80,
+    ninety: 90,
+  };
+
+  const SK_ONES = {
+    nula: 0,
+    jedna: 1,
+    jeden: 1,
+    jedno: 1,
+    dve: 2,
+    dva: 2,
+    tri: 3,
+    styri: 4,
+    pat: 5,
+    sest: 6,
+    sedem: 7,
+    osem: 8,
+    devat: 9,
+  };
+
+  const SK_TEENS = {
+    desat: 10,
+    jedenast: 11,
+    dvanast: 12,
+    trinast: 13,
+    strnast: 14,
+    patnast: 15,
+    sestnast: 16,
+    sedemnast: 17,
+    osemnast: 18,
+    devatnast: 19,
+  };
+
+  const SK_TENS = {
+    dvadsat: 20,
+    tridsat: 30,
+    styridsat: 40,
+    patdesiat: 50,
+    sestdesiat: 60,
+    sedemdesiat: 70,
+    osemdesiat: 80,
+    devatdesiat: 90,
+  };
+
+  const BULL_WORDS = new Set(["bull", "bulls", "bullseye", "bullseyes"]);
+
+  const stripDiacritics = (input) => {
+    const value = String(input || "");
+    if (typeof value.normalize === "function") {
+      return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    return value;
+  };
+
+  const tokenizeSpeech = (text) =>
+    stripDiacritics(text)
+      .toLowerCase()
+      .replace(/[^a-z\s-]/g, " ")
+      .split(/[\s-]+/)
+      .filter(Boolean);
+
+  const parseEnglishTokens = (tokens) => {
+    if (!tokens.length) {
+      return null;
+    }
+
+    let current = 0;
+    let matched = false;
+    let sawHundred = false;
+    const leadingTerm = tokens[0];
+
+    tokens.forEach((word) => {
+      if (word === "and" || word === "a") {
+        return;
+      }
+
+      if (EN_ONES[word] !== undefined) {
+        current += EN_ONES[word];
+        matched = true;
+        return;
+      }
+
+      if (EN_TEENS[word] !== undefined) {
+        current += EN_TEENS[word];
+        matched = true;
+        return;
+      }
+
+      if (EN_TENS[word] !== undefined) {
+        current += EN_TENS[word];
+        matched = true;
+        return;
+      }
+
+      if (word === "hundred") {
+        matched = true;
+        sawHundred = true;
+        if (current === 0) {
+          current = 100;
+        } else {
+          current *= 100;
+        }
+        return;
+      }
+
+      if (BULL_WORDS.has(word)) {
+        current += 50;
+        matched = true;
+      }
+    });
+
+    if (!matched) {
+      return null;
+    }
+
+    if (!sawHundred && leadingTerm === "one" && current >= 20) {
+      current += 100;
+    }
+
+    if (!sawHundred && leadingTerm === "hundred" && current < 100) {
+      current += 100;
+    }
+
+    if (!sawHundred && leadingTerm === "one" && current === 0) {
+      return 1;
+    }
+
+    return current;
+  };
+
+  const parseSlovakTokens = (tokens) => {
+    if (!tokens.length) {
+      return null;
+    }
+
+    let current = 0;
+    let matched = false;
+
+    tokens.forEach((word) => {
+      if (word === "a") {
+        return;
+      }
+
+      if (SK_ONES[word] !== undefined) {
+        current += SK_ONES[word];
+        matched = true;
+        return;
+      }
+
+      if (SK_TEENS[word] !== undefined) {
+        current += SK_TEENS[word];
+        matched = true;
+        return;
+      }
+
+      if (SK_TENS[word] !== undefined) {
+        current += SK_TENS[word];
+        matched = true;
+        return;
+      }
+
+      if (word === "sto") {
+        matched = true;
+        if (current === 0) {
+          current = 100;
+        } else if (current < 100) {
+          current += 100;
+        }
+      }
+    });
+
+    if (!matched) {
+      return null;
+    }
+
+    return current;
+  };
+
+  const parseNumberFromWords = (text) => {
+    const tokens = tokenizeSpeech(text);
+    if (!tokens.length) {
+      return null;
+    }
+
+    const english = parseEnglishTokens(tokens);
+    if (typeof english === "number" && !Number.isNaN(english)) {
+      return english;
+    }
+
+    const slovak = parseSlovakTokens(tokens);
+    if (typeof slovak === "number" && !Number.isNaN(slovak)) {
+      return slovak;
+    }
+
+    return null;
+  };
+
+  const clampScore = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return "";
+    }
+    if (value < 0) {
+      return "0";
+    }
+    if (value > MAX_SCORE) {
+      return String(MAX_SCORE);
+    }
+    return String(value);
+  };
+
+  const extractScoreFromText = (text) => {
+    if (!text) {
+      return "";
+    }
+
+    const digitMatch = text.match(/\d+/g);
+    if (digitMatch && digitMatch.length) {
+      const candidate = parseInt(digitMatch[digitMatch.length - 1], 10);
+      if (!Number.isNaN(candidate)) {
+        return clampScore(candidate);
+      }
+    }
+
+    const spokenValue = parseNumberFromWords(text);
+    if (typeof spokenValue === "number") {
+      return clampScore(spokenValue);
+    }
+
+    return "";
+  };
+
+  const selectScoreFromCandidates = (candidates) => {
+    if (!candidates || !candidates.length) {
+      return "";
+    }
+    for (let i = 0; i < candidates.length; i += 1) {
+      const value = extractScoreFromText(candidates[i]);
+      if (value) {
+        return value;
+      }
+    }
+    return "";
+  };
+
   const state = {
     recognition: null,
     shouldAutoRestart: false,
     windowId: null,
-    lang: "sk-SK",
+    lang: "en-GB",
     status: "idle",
     lastSubmitted: "",
-  };
-
-  const extractScore = (text) => {
-    if (!text) {
-      return "";
-    }
-    const matches = text.match(/\d+/g);
-    if (!matches) {
-      return "";
-    }
-    const candidate = matches[matches.length - 1];
-    const numeric = parseInt(candidate, 10);
-    if (Number.isNaN(numeric)) {
-      return "";
-    }
-    const clamped = Math.min(Math.max(numeric, 0), 180);
-    return String(clamped);
   };
 
   const findInput = () => document.querySelector(INPUT_SELECTOR);
@@ -134,24 +396,21 @@ const log = (value, level = "log") => {
   };
 
   const handleResult = (event) => {
-    let interimTranscript = "";
-    let finalTranscript = "";
+    const interimCandidates = [];
+    const finalCandidates = [];
 
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      const { transcript } = event.results[i][0];
-      if (!transcript) {
-        continue;
-      }
-
-      if (event.results[i].isFinal) {
-        finalTranscript += transcript;
+      const result = event.results[i];
+      const transcripts = Array.from(result).map((alternative) => alternative.transcript || "");
+      if (result.isFinal) {
+        finalCandidates.push(...transcripts);
       } else {
-        interimTranscript += transcript;
+        interimCandidates.push(...transcripts);
       }
     }
 
-    const interimScore = extractScore(interimTranscript);
-    const finalScore = extractScore(finalTranscript);
+    const interimScore = selectScoreFromCandidates(interimCandidates);
+    const finalScore = selectScoreFromCandidates(finalCandidates);
 
     if (interimScore) {
       updateInterimValue(interimScore);
@@ -247,6 +506,7 @@ const log = (value, level = "log") => {
     recognition.interimResults = true;
     recognition.continuous = false;
     recognition.lang = language || state.lang;
+    recognition.maxAlternatives = 5;
 
     recognition.addEventListener("result", handleResult);
     recognition.addEventListener("error", handleError);

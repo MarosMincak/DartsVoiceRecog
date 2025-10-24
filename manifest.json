@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Voice Darts",
   "description": "Revamp your darts game with Nakka's Google Extension! Record scores with your voice, not keyboard.",
-  "version": "1.3",
+  "version": "2.0",
   "permissions": [
     "storage", 
     "activeTab",
