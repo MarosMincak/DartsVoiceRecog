@@ -1,142 +1,73 @@
-let website_data = []
-let commands = []
+const DEFAULT_WINDOW_STATE = Object.freeze({
+  status: false,
+  lang: "sk-SK",
+  dialect: "",
+  lastError: null,
+});
 
-function registerCommand(name, oncommand) {
-  if(commands.find(o => o.name == name) != undefined) {
+const windowStore = new Map();
+
+function cloneState(state) {
+  return {
+    status: state.status,
+    lang: state.lang,
+    dialect: state.dialect,
+    lastError: state.lastError,
+  };
+}
+
+function ensureWindowState(windowId) {
+  if (!windowStore.has(windowId)) {
+    windowStore.set(windowId, { ...DEFAULT_WINDOW_STATE });
+  }
+  return windowStore.get(windowId);
+}
+
+function readWindowState(windowId) {
+  const state = ensureWindowState(windowId);
+  return cloneState(state);
+}
+
+function updateWindowState(windowId, patch = {}) {
+  const state = ensureWindowState(windowId);
+  Object.assign(state, patch);
+  return cloneState(state);
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || message.scope !== "dartsvoice") {
     return;
   }
-  commands.push({
-    name: name,
-    oncommand: oncommand
-  })
-}
 
-function toBoolean(str) {
-  if(str == "true") {
-    return true;
+  if (typeof message.windowId === "undefined" && message.type !== "window:clear") {
+    sendResponse({ ok: false, error: "windowId-missing" });
+    return;
   }
-  return false;
-}
 
-function runCommand(cmd) {
-  let segments = cmd.split(" ");
-  var name = ""
-  var args = []
-  for(var i = 0; i < segments.length; i++) {
-    if(i == 0) {
-      name = segments[i];
-    }else {
-      args.push(segments[i]);
+  const windowId = typeof message.windowId === "undefined" ? undefined : String(message.windowId);
+
+  switch (message.type) {
+    case "window:get": {
+      const data = readWindowState(windowId);
+      sendResponse({ ok: true, data });
+      break;
     }
-  }
-  if(commands.find(o => o.name == name) == undefined) {
-    return "undefined"
-  }else {
-    return commands.find(o => o.name == name).oncommand(name, args)
-  }
-}
-
-chrome.runtime.onMessage.addListener((message, sender, res) => {
-  res(runCommand(message))
-})
-
-registerCommand("getwindow", (name, args) => {
-  if(args.length == 1) {
-    if(website_data.find(o => o.webid == args[0]) == undefined) {
-      return {
-        status: false,
-        lang: "sk-SK",
-        dialect: ""
-      };
-    }else {
-      return website_data.find(o => o.webid == args[0]);
+    case "window:update": {
+      const patch = message.patch || {};
+      const data = updateWindowState(windowId, patch);
+      sendResponse({ ok: true, data });
+      break;
     }
-  }else {
-    return "undefined";
-  }
-})
-
-registerCommand("getdata", (name, args) => {
-  if(args.length == 3) {
-    if(args[0] == "window") {
-      if(args[1] == "status") {
-        if(website_data.find(o => o.webid == args[2]) == undefined) {
-          return false;
-        }else {
-          return website_data.find(o => o.webid == args[2]).status;
-        }
-      }else if(args[1] == "lang") {
-        if(website_data.find(o => o.webid == args[2]) == undefined) {
-          return "sk-sk";
-        }else {
-          return website_data.find(o => o.webid == args[2]).lang;
-        }
-      }else if(args[1] == "dialect") {
-        if(website_data.find(o => o.webid == args[2]) == undefined) {
-          return "";
-        }else {
-          return website_data.find(o => o.webid == args[2]).dialect;
-        }
-      }else {
-        return "undefined";
+    case "window:clear": {
+      if (typeof windowId === "undefined") {
+        windowStore.clear();
+      } else {
+        windowStore.delete(windowId);
       }
-    }else {
-      return "undefined";
+      sendResponse({ ok: true });
+      break;
     }
-  }else {
-    return "undefined";
+    default:
+      sendResponse({ ok: false, error: "unknown-command" });
   }
-})
-
-registerCommand("setdata", (name, args) => {
-  if(args.length == 4) {
-    if(args[0] == "window") {
-      if(args[1] == "status") {
-        if(website_data.find(o => o.webid == args[2]) == undefined) {
-          website_data.push({
-            webid: args[2],
-            status: toBoolean(args[3]),
-            lang: "sk-sk",
-            dialect: ""
-          })
-          return true;
-        }else {
-          website_data.find(o => o.webid == args[2]).status = toBoolean(args[3])
-          return true;
-        }
-      }else if(args[1] == "lang") {
-        if(website_data.find(o => o.webid == args[2]) == undefined) {
-          website_data.push({
-            webid: args[2],
-            status: false,
-            lang: args[3],
-            dialect: ""
-          })
-          return true;
-        }else {
-          website_data.find(o => o.webid == args[2]).lang = args[3]
-          return true;
-        }
-      }else if(args[1] == "dialect") {
-        if(website_data.find(o => o.webid == args[2]) == undefined) {
-          website_data.push({
-            webid: args[2],
-            status: false,
-            lang: "sk-sk",
-            dialect: args[3]
-          })
-          return true;
-        }else {
-          website_data.find(o => o.webid == args[2]).dialect = args[3]
-          return true;
-        }
-      }else {
-        return "undefined";
-      }
-    }else {
-      return "undefined";
-    }
-  }else {
-    return "undefined";
-  }
-})
+});
