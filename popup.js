@@ -375,14 +375,10 @@ function attachListeners() {
   }
 
   if (dom.appSelect) {
-    dom.appSelect.addEventListener("change", (event) => {
-      if (event.target.value !== "nakka") {
-        setAlert(LangString("message.unsupported_app"), "warn");
-        event.target.value = "nakka";
-      } else {
-        clearAlert();
-      }
+    dom.appSelect.addEventListener("change", () => {
+      dom.appSelect.value = "nakka";
     });
+    dom.appSelect.value = "nakka";
   }
 
   if (dom.languageSelect) {

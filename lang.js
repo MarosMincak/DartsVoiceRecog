@@ -19,7 +19,7 @@ const Langs = [
             {name:"label.app",value:"Application"},
             {name:"toggle.on",value:"Stop listening"},
             {name:"toggle.off",value:"Start listening"},
-            {name:"status.ready",value:"Ready when you are."},
+            {name:"status.ready",value:""},
             {name:"status.loading",value:"Preparing voice capture..."},
             {name:"status.listening",value:"Listening for scores..."},
             {name:"status.blocked",value:"Open the supported scoreboard to enable voice input."},
