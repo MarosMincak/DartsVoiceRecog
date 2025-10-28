@@ -1,8 +1,7 @@
 # DartsVoice
 
 Voice-controlled scoring for N01 darts matches.  
-This Chromium extension listens to spoken scores, writes them into the current Nakka scoreboard, and submits the throw hands-free. It is designed for Slovak-speaking players, but supports dozens of recognition dialects.
-
+This Chromium extension listens to spoken scores, writes them into the current Nakka scoreboard, and submits the throw hands-free. 
 ## Features
 
 - 🎤 Hands-free input &mdash; Web Speech API captures your score and simulates the submit key press.

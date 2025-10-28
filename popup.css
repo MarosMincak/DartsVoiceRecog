@@ -23,6 +23,7 @@
   --radius-medium: 12px;
   --radius-small: 8px;
   --font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --accent-font-family: "Cookie", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 *,
@@ -45,8 +46,8 @@ body {
 body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 12px;
 }
 
 h1 {
@@ -91,10 +92,10 @@ p {
   border: 1px solid var(--color-panel-border);
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-panel);
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .alert {
@@ -165,7 +166,7 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 10px 16px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.05);
@@ -175,8 +176,8 @@ p {
 }
 
 .listen-toggle__thumb {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   transition: transform 160ms ease, background 160ms ease;
@@ -195,7 +196,7 @@ p {
 
 .listen-toggle--active .listen-toggle__thumb {
   background: rgba(255, 255, 255, 0.9);
-  transform: translateX(8px);
+  transform: translateX(6px);
 }
 
 .listen-toggle:active {
@@ -210,13 +211,13 @@ p {
 
 .form {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .form__row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .form__label {
@@ -227,12 +228,12 @@ p {
 select {
   appearance: none;
   width: 100%;
-  height: 36px;
+  height: 34px;
   border-radius: var(--radius-small);
   border: 1px solid var(--color-input-border);
   background: var(--color-input-bg);
   color: var(--color-text);
-  padding: 0 12px;
+  padding: 0 10px;
   font-size: 13px;
   transition: border-color 140ms ease, background 140ms ease;
 }
@@ -252,7 +253,7 @@ option {
   padding-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .status {
@@ -265,8 +266,31 @@ option {
   justify-content: center;
 }
 
-.support iframe,
-.support .bmc-btn-container {
-  transform: scale(0.85);
-  transform-origin: center;
+.support__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #ffdd00;
+  color: #000000;
+  font-family: var(--accent-font-family);
+  font-size: 16px;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.support__button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+.support__button:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.support__emoji {
+  font-size: 18px;
 }
